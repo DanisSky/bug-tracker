@@ -1,1 +1,3 @@
-docker-compose -f docker-compose.dev.yaml up --build
+```sh
+docker-compose up --build
+```
