@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, status
 
 from api.deps import get_current_manager_user, get_current_user
 from enums.base import TypeEnum, StatusEnum, SortOrderEnum
-from models.task import Task, TaskBlock
+from models.task import Task
 from models.user import User
 from schemas.msg import Msg
 from schemas.task import TaskOut, TaskIn, TaskOutFull, TaskUpdate
@@ -52,15 +52,14 @@ async def get_task(
         current_user: User = Depends(get_current_user)  # noqa
 ) -> Any:
     task = await Task.objects.filter(is_deleted=False).select_related(
-        ['children', 'executor', 'creator']).fields({'children': {'id'}}).get_or_none(pk=pk)
+        ['children', 'executor', 'creator', 'blocks', 'blocks_by']
+    ).fields({'children': {'id'}}).get_or_none(pk=pk)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    blocks_by = await TaskBlock.objects.filter(secondary=pk).fields('main').all()
-    blocks = await TaskBlock.objects.filter(main=pk).fields('secondary').all()
-    return {**task.dict(), 'blocks': blocks, 'blocks_by': blocks_by}
+    return task
 
 
-@router.post("/", response_model=TaskOutFull)
+@router.post("/", response_model=TaskOut)
 async def create_task(
         task_in: TaskIn,
         current_user: User = Depends(get_current_user)  # noqa

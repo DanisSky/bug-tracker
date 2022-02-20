@@ -3,6 +3,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.deps import get_current_manager_user
+from core.security import get_password_hash
 from models.user import User
 from schemas.user import UserOut, UserUpdate
 
@@ -30,4 +31,6 @@ async def update_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="user not found",
         )
-    return await user.update(**user_update.dict())
+    data = user_update.dict(exclude={'password'})
+    data['hash_password'] = get_password_hash(user_update.password)
+    return await user.update(data)
